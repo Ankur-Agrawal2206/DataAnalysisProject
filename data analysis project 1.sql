@@ -127,6 +127,61 @@ From PopvsVac
 --where location = 'india'
 order by 2,3
 
+--temp table
+
+DROP table if exists #PercentPopulationVaccinated
+create table #PercentPopulationVaccinated
+(
+continent nvarchar(255),
+location nvarchar(255),
+date datetime,
+population numeric,
+New_vaccinations numeric,
+RollingPeopleVaccinated numeric
+)
+
+insert into #PercentPopulationVaccinated
+select dat.continent, dat.location,dat.date,
+dat.population,vac.new_vaccinations,
+sum(cast(vac.new_vaccinations as numeric)) over (partition by dat.location 
+order by dat.location,dat.date) as rolling_count_vaccination
+from coviddata dat
+join CovidVaccinations vac
+	on dat.location = vac.location and
+	dat.date = vac.date
+--where dat.continent is not null
+
+Select *, (RollingPeopleVaccinated/Population)*100 as
+percentage_rolling_people
+From #PercentPopulationVaccinated
+
+-- views for visualizations
+
+create view PercentPopulationVaccinated as
+select dat.continent, dat.location,dat.date,
+dat.population,vac.new_vaccinations,
+sum(cast(vac.new_vaccinations as numeric)) over (partition by dat.location 
+order by dat.location,dat.date) as rolling_count_vaccination
+from coviddata dat
+join CovidVaccinations vac
+	on dat.location = vac.location and
+	dat.date = vac.date
+where dat.continent is not null
+
+select *
+from PercentPopulationVaccinated
+
+create view RateOfDeath as
+select location,date ,total_cases,total_deaths, 
+format((total_deaths/total_cases)*100,'N7')
+AS rate_of_death
+from coviddata
+where continent is not null
+
+select *
+from RateOfDeath
+
+
 
 
 
